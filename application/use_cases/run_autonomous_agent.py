@@ -54,10 +54,16 @@ class RunAutonomousAgentUseCase:
             retry_count = 0
             while state.reflection and not state.reflection.passed and retry_count < self.max_reflection_retries:
                 logger.info(
-                    "Document score %d failed threshold (80). Running improvement pass %d/%d...",
+                    "Document score %d failed threshold. Running improvement pass %d/%d...",
                     state.reflection.quality_score,
                     retry_count + 1,
                     self.max_reflection_retries,
+                    extra={
+                        "quality_score": state.reflection.quality_score,
+                        "retry_count": retry_count + 1,
+                        "max_retries": self.max_reflection_retries,
+                        "action": "improve_content"
+                    }
                 )
                 state = await self.reflection_port.improve(state)
                 # Recheck document quality score
@@ -68,6 +74,11 @@ class RunAutonomousAgentUseCase:
                     state.reflection.quality_score,
                     str(state.reflection.passed),
                     retry_count,
+                    extra={
+                        "quality_score": state.reflection.quality_score,
+                        "passed": state.reflection.passed,
+                        "retry_count": retry_count,
+                    }
                 )
             
             if state.reflection and not state.reflection.passed:

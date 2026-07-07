@@ -61,6 +61,11 @@ class ReflectionService(ReflectionPort):
                 "Reflection complete. Score: %d/100 | Passed: %s",
                 state.reflection.quality_score,
                 str(state.reflection.passed),
+                extra={
+                    "quality_score": state.reflection.quality_score,
+                    "passed": state.reflection.passed,
+                    "issues_count": len(state.reflection.issues),
+                }
             )
             return state
 
@@ -117,8 +122,11 @@ class ReflectionService(ReflectionPort):
         # Otherwise, split by newline blocks or allocate chunks
         if len(sections) == len(completed_tasks):
             for i, task in enumerate(completed_tasks):
-                task.result = sections[i]
-                state.generated_content[task.id] = sections[i]
+                content = sections[i]
+                if content.startswith(task.description):
+                    content = content[len(task.description):].lstrip()
+                task.result = content
+                state.generated_content[task.id] = content
         else:
             # Fallback: Split by double newlines into roughly equal sections if layout matches
             # Or distribute as a single block in the first completed task and clear the rest
@@ -131,8 +139,11 @@ class ReflectionService(ReflectionPort):
             paragraphs_split = re.split(r"\n{2,}(?=[A-Z0-9])", improved_content, maxsplit=len(completed_tasks) - 1)
             for i, task in enumerate(completed_tasks):
                 if i < len(paragraphs_split):
-                    task.result = paragraphs_split[i].strip()
-                    state.generated_content[task.id] = paragraphs_split[i].strip()
+                    content = paragraphs_split[i].strip()
+                    if content.startswith(task.description):
+                        content = content[len(task.description):].lstrip()
+                    task.result = content
+                    state.generated_content[task.id] = content
 
     def _parse_json(self, text: str) -> dict:
         """Robust parsing helper to extract JSON data from the LLM response without external deps."""
