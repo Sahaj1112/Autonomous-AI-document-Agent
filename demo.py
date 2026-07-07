@@ -82,8 +82,17 @@ async def run_demo(request_text: str):
 
 
 if __name__ == "__main__":
-    prompt = "Create a professional project plan for launching a new product in 3 months."
-    if len(sys.argv) > 1:
-        prompt = sys.argv[1]
+    # Suppress verbose httpx logging
+    logging.getLogger("httpx").setLevel(logging.WARNING)
 
-    asyncio.run(run_demo(prompt))
+    demos = [
+        "Create a project plan for launching an AI customer support chatbot in 3 months.",
+        "Write a business proposal for adopting generative AI in a mid-sized marketing company.",
+        "Create an implementation strategy for an AI-powered financial analytics platform."
+    ]
+
+    for i, prompt in enumerate(demos, 1):
+        print(f"\n\n{'=' * 80}")
+        print(f"RUNNING DEMO CASE {i}/3")
+        print(f"{'=' * 80}")
+        asyncio.run(run_demo(prompt))

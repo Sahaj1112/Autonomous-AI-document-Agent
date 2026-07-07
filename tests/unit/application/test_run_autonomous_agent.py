@@ -123,3 +123,47 @@ async def test_use_case_reflection_fail_and_improve() -> None:
     assert reflector_mock.improve.call_count == 1  # Called due to score 60 < 80
     document_mock.generate_document.assert_called_once()
     storage_mock.save_file.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_use_case_reflection_exhausts_retries() -> None:
+    """Verifies that reflection improvement loop terminates after max_reflection_retries if score remains low."""
+    planner_mock = AsyncMock(spec=PlannerService)
+    executor_mock = AsyncMock(spec=ExecutorService)
+    reflector_mock = AsyncMock(spec=ReflectionService)
+    document_mock = MagicMock(spec=DocumentPort)
+    storage_mock = AsyncMock()
+
+    planner_mock.plan.side_effect = lambda s: s
+    executor_mock.execute_tasks.side_effect = lambda s: s
+
+    # Always return a failing reflection score
+    async def reflect_side_effect(state: AgentState) -> AgentState:
+        state.reflection = ReflectionResult(
+            quality_score=50, passed=False, improvement_instructions="Still bad"
+        )
+        return state
+
+    reflector_mock.reflect.side_effect = reflect_side_effect
+    reflector_mock.improve.side_effect = lambda s: s
+    document_mock.generate_document.return_value = b"mock bytes"
+    storage_mock.save_file.return_value = "generated_documents/test.docx"
+
+    use_case = RunAutonomousAgentUseCase(
+        planner_port=planner_mock,
+        executor_service=executor_mock,
+        reflection_port=reflector_mock,
+        document_port=document_mock,
+        storage_port=storage_mock,
+        max_reflection_retries=2, # Set max retries to 2
+    )
+
+    final_state = await use_case.execute("Generate plan")
+
+    assert final_state.reflection.quality_score == 50
+    assert final_state.reflection.passed is False
+    # reflect called once initially, and once per retry loop (2 retries) = 3 total calls
+    assert reflector_mock.reflect.call_count == 3
+    # improve called exactly max_reflection_retries times
+    assert reflector_mock.improve.call_count == 2
+    document_mock.generate_document.assert_called_once()
