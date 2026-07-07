@@ -4,7 +4,7 @@
 The Autonomous AI Document Agent is a sophisticated backend service that automatically translates high-level, natural language requests into comprehensive, professionally formatted Microsoft Word (`.docx`) documents. Instead of generating a single large block of text, the agent acts autonomously by breaking complex requests down into a structured execution plan, sequentially generating contextualized content, and rigorously evaluating its own output for quality before compiling the final deliverable.
 
 ## Problem Statement
-Creating high-quality business documents (like project plans, proposals, and strategy reports) is often time-consuming. Off-the-shelf LLMs frequently produce superficial, unstructured, or hallucinated content when asked to write an entire document in a single prompt. This project solves that problem by introducing an autonomous, multi-step orchestration pipeline that dynamically plans, executes, and self-reviews document generation to guarantee depth, accuracy, and structural integrity.
+Creating high-quality business documents (like project plans, proposals, and strategy reports) is often time-consuming. Off-the-shelf LLMs frequently produce superficial, unstructured, or hallucinated content when asked to write an entire document in a single prompt. This project addresses that problem by introducing an autonomous, multi-step orchestration pipeline that dynamically plans, executes, and self-reviews document generation to improve document depth, structure, and overall quality.
 
 ## Key Features & Autonomous Workflow
 1. **Dynamic Planning**: The agent dynamically parses natural language requests and authors a multi-step task execution plan (e.g., separating an Executive Summary from an Implementation Roadmap).
@@ -47,8 +47,7 @@ Autonomous-AI-document-Agent/
 
 1. **Clone the repository and navigate into it**:
 ```powershell
-git clone <repository-url>
-cd Autonomous-AI-document-Agent
+git clone https://github.com/Sahaj1112/Autonomous-AI-document-Agent.git
 ```
 
 2. **Create and activate a virtual environment**:
@@ -114,7 +113,7 @@ python demo.py
 This script sequentially runs three high-complexity demonstration cases (e.g., Financial Analytics strategies, Chatbot proposals) and prints the detailed execution trace, proving the system's dynamic adaptability.
 
 ## Testing Instructions
-The repository includes a comprehensive 30+ test suite verifying domain rules, autonomous orchestration, dependency injection, and API endpoint behavior (with LLMs accurately mocked).
+The repository includes a comprehensive 30+ test suite covering core domain rules, autonomous orchestration, application services, and API endpoint behavior with external LLM interactions mocked for deterministic testing.
 Run the full test suite using:
 ```powershell
 pytest -v
