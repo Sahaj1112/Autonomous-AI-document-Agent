@@ -1,142 +1,131 @@
 # Autonomous AI Document Agent
 
-An autonomous AI agent that accepts natural language requests, dynamically plans tasks, generates professional business documents (.docx), and performs quality self-checks with reflection.
+## Project Overview
+The Autonomous AI Document Agent is a sophisticated backend service that automatically translates high-level, natural language requests into comprehensive, professionally formatted Microsoft Word (`.docx`) documents. Instead of generating a single large block of text, the agent acts autonomously by breaking complex requests down into a structured execution plan, sequentially generating contextualized content, and rigorously evaluating its own output for quality before compiling the final deliverable.
 
-## Features
+## Problem Statement
+Creating high-quality business documents (like project plans, proposals, and strategy reports) is often time-consuming. Off-the-shelf LLMs frequently produce superficial, unstructured, or hallucinated content when asked to write an entire document in a single prompt. This project solves that problem by introducing an autonomous, multi-step orchestration pipeline that dynamically plans, executes, and self-reviews document generation to guarantee depth, accuracy, and structural integrity.
 
-- **Dynamic Task Planning** — The LLM analyzes your request and generates a unique execution plan (never hardcoded)
-- **Sequential Task Execution** — Each task is executed independently with full state tracking
-- **Reflection / Self-Check** — Generated content is evaluated on 7 quality criteria
-- **Automatic Improvement** — If quality score < 80, the agent performs one improvement iteration
-- **Professional DOCX Output** — Polished Word documents with title page, styled headings, and proper formatting
-- **Full Execution Trace** — API response includes the complete plan, task statuses, assumptions, and reflection results
+## Key Features & Autonomous Workflow
+1. **Dynamic Planning**: The agent dynamically parses natural language requests and authors a multi-step task execution plan (e.g., separating an Executive Summary from an Implementation Roadmap).
+2. **Sequential Task Execution**: The agent iterates through its plan, generating extensive, deeply contextualized content for each section one by one.
+3. **Reflection and Self-Check Mechanism**: After execution, the agent acts as its own critic. It grades the compiled document on a 1-100 scale. If the quality falls below the strict threshold (80/100), the agent automatically enters an improvement loop to rewrite and enhance weak sections.
+4. **Professional Document Generation**: The finalized markdown is securely compiled and rendered into a native, stylized `.docx` file ready for business distribution.
 
-## Architecture
+## Clean Architecture
+This project strictly adheres to **Clean Architecture** principles to guarantee maintainability, testability, and separation of concerns.
+- **Dependency Rule**: `Presentation -> Application -> Domain`. Inner layers never depend on outer layers.
+- **Domain Layer**: Contains pure business rules, entities, and custom exceptions. It is entirely agnostic of web frameworks or third-party APIs.
+- **Application Layer**: Orchestrates the autonomous workflow (Planner, Executor, Reflector) utilizing abstract Ports.
+- **Infrastructure Layer**: Implements Application Ports. It houses all external dependencies (Groq SDK, `python-docx`, local file storage).
+- **Presentation Layer**: Exposes business logic via FastAPI endpoints, utilizing strict Dependency Injection from a centralized composition root (`app/dependencies.py`).
 
-```
-app/
-├── main.py                  # FastAPI app factory
-├── api/routes.py            # POST /agent + GET /documents/{filename}
-├── agent/
-│   ├── autonomous_agent.py  # Orchestrator (plan → execute → reflect → generate)
-│   ├── planner.py           # LLM-powered dynamic task planning
-│   ├── executor.py          # Sequential task executor
-│   ├── reflector.py         # Quality self-check + improvement
-│   └── state.py             # Mutable execution state
-├── llm/groq_client.py       # Async Groq SDK wrapper
-├── tools/
-│   ├── content_tool.py      # Per-section content generation
-│   └── document_tool.py     # python-docx rendering
-├── models/
-│   ├── request_models.py    # Pydantic request validation
-│   └── response_models.py   # Pydantic response schemas
-├── prompts/                 # LLM prompt templates
-└── core/
-    ├── config.py            # pydantic-settings configuration
-    └── exceptions.py        # Custom exception hierarchy
-```
-
-## Setup
-
-### 1. Clone & Install
-
-```bash
-cd AI-Project
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
-pip install -r requirements.txt
-```
-
-### 2. Configure Environment
-
-```bash
-copy .env.example .env
-```
-
-Edit `.env` and add your Groq API key:
-
-```
-GROQ_API_KEY=your_actual_groq_api_key
-```
-
-Get a free API key at: https://console.groq.com
-
-### 3. Run the Server
-
-```bash
-uvicorn app.main:app --reload
-```
-
-The API will be available at `http://localhost:8000`.
-
-API docs: `http://localhost:8000/docs`
-
-## Usage
-
-### Create a Document
-
-```bash
-curl -X POST http://localhost:8000/agent \
-  -H "Content-Type: application/json" \
-  -d '{"request": "Create a project plan for launching an AI customer support chatbot in 3 months."}'
-```
-
-### Download the Document
-
-Use the `download_url` from the response:
-
-```bash
-curl -O http://localhost:8000/documents/{filename}.docx
-```
-
-## API Response
-
-```json
-{
-  "request": "Original user request",
-  "document_type": "Project Plan",
-  "execution_plan": ["Task 1 description", "Task 2 description"],
-  "tasks": [
-    {
-      "id": "task_1",
-      "description": "Analyze project objectives",
-      "status": "COMPLETED",
-      "result": "Generated content..."
-    }
-  ],
-  "assumptions": ["Assumption 1", "Assumption 2"],
-  "reflection": {
-    "quality_score": 85,
-    "passed": true,
-    "issues": [],
-    "improvement_instructions": ""
-  },
-  "document_path": "generated_documents/project_plan_abc12345.docx",
-  "download_url": "/documents/project_plan_abc12345.docx"
-}
+### Project Folder Structure
+```text
+Autonomous-AI-document-Agent/
+├── app/                  # Application composition root and FastAPI lifecycle
+├── application/          # Use cases, core services, and abstract ports
+├── domain/               # Pure business entities and domain exceptions
+├── infrastructure/       # Concrete adapters (Groq LLM, python-docx, Storage)
+├── presentation/         # HTTP API routing and Pydantic validation schemas
+├── tests/                # Comprehensive unit and integration test suite
+├── generated_documents/  # Default storage directory for generated Word files
+├── demo.py               # Standalone execution script for testing the agent
+└── requirements.txt      # Project dependencies
 ```
 
 ## Technology Stack
+- **Language**: Python 3.12+
+- **Web Framework**: FastAPI (Uvicorn)
+- **AI/LLM**: Groq API Integration (`llama-3.3-70b-versatile` model)
+- **Document Generation**: `python-docx`
+- **Testing**: `pytest`, `pytest-asyncio`
 
-| Technology | Purpose |
-|---|---|
-| Python 3.10+ | Core language |
-| FastAPI | Web framework |
-| Groq API | LLM inference (Llama 3.3 70B) |
-| python-docx | Word document generation |
-| Pydantic | Data validation & serialization |
-| pydantic-settings | Configuration management |
-| Uvicorn | ASGI server |
+## Getting Started
 
-## Agent Workflow
+### Installation Instructions (Windows PowerShell)
 
-```
-User Request → Validation → Intent Analysis → Dynamic Planning
-→ Sequential Execution → Content Generation → Reflection
-→ Improvement (if needed) → DOCX Generation → API Response
+1. **Clone the repository and navigate into it**:
+```powershell
+git clone <repository-url>
+cd Autonomous-AI-document-Agent
 ```
 
-## License
+2. **Create and activate a virtual environment**:
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-MIT
+3. **Install dependencies**:
+```powershell
+pip install -r requirements.txt
+```
+
+4. **Environment Configuration**:
+Create a `.env` file in the root directory and configure your Groq API Key (never commit this key to version control):
+```env
+# .env
+GROQ_API_KEY=gsk_your_actual_api_key_here
+```
+
+### Running the Application
+Start the application locally with live-reload enabled:
+```powershell
+uvicorn app.main:app --reload
+```
+
+- **Swagger API Documentation**: Navigate to [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) to explore and interact with the endpoints.
+
+## API Endpoints
+
+- `GET /health`
+  Returns the liveness status of the application.
+
+- `POST /agent`
+  Submits a natural language document generation request.
+  **Example Request:**
+  ```json
+  {
+    "request": "Create a project plan for launching an AI customer support chatbot in 3 months."
+  }
+  ```
+  **Example Response (abridged):**
+  ```json
+  {
+    "execution_plan": ["Executive Summary", "Implementation Roadmap"],
+    "reflection": {
+      "quality_score": 92,
+      "passed": true
+    },
+    "document_path": "C:\\...\\generated_documents\\agent_doc_f617ebc5.docx",
+    "download_url": "/documents/agent_doc_f617ebc5.docx"
+  }
+  ```
+
+- `GET /documents/{filename}`
+  Securely serves the generated `.docx` file for download.
+
+## Standalone Demonstration (`demo.py`)
+You can run the agent workflow directly from your terminal, bypassing the web server entirely, to observe the orchestration logs in real-time.
+```powershell
+python demo.py
+```
+This script sequentially runs three high-complexity demonstration cases (e.g., Financial Analytics strategies, Chatbot proposals) and prints the detailed execution trace, proving the system's dynamic adaptability.
+
+## Testing Instructions
+The repository includes a comprehensive 30+ test suite verifying domain rules, autonomous orchestration, dependency injection, and API endpoint behavior (with LLMs accurately mocked).
+Run the full test suite using:
+```powershell
+pytest -v
+```
+
+## Security Considerations
+- **Path Traversal Protection**: The storage adapter strictly validates and sanitizes all document filenames before retrieval, blocking `../` traversal attacks with instant HTTP 400 rejections.
+- **Traceback Suppression**: Global exception handlers trap uncaught server crashes and domain failures, returning safe HTTP 500 JSON responses without exposing raw Python tracebacks or infrastructure internals.
+- **Secure Configuration**: The API key is securely injected directly into the Infrastructure layer at runtime via `pydantic-settings`, guaranteeing it is never printed or unintentionally exposed in API responses.
+
+## Future Improvements
+- **Asynchronous Webhooks**: Transitioning the HTTP API to return a `job_id` and using WebSockets or webhooks for long-running document generation notifications.
+- **Advanced File Types**: Implementing additional infrastructure adapters for PDF, Markdown, and HTML exports.
+- **Vector Search / RAG Integration**: Connecting the `ContentService` to a Retrieval-Augmented Generation pipeline to cite internal company data during document compilation.
