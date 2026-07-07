@@ -1,0 +1,1 @@
+from infrastructure.document.docx_document_adapter import DocxDocumentAdapter

@@ -1,0 +1,23 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Windows",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+  "include": [
+    "app",
+    "application",
+    "domain",
+    "infrastructure",
+    "presentation",
+    "prompts",
+    "tests"
+  ],
+  "exclude": [
+    "venv",
+    ".venv/Lib",
+    "**/__pycache__"
+  ]
+}
