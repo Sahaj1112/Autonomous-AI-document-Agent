@@ -50,7 +50,17 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def general_domain_error_handler(request: Request, exc: DomainError) -> JSONResponse:
         logger.error("General Domain error encountered: %s", str(exc))
+        # Map validation-like domain errors to 400, others to 500
+        status_code = 400 if "must be at least 10 characters" in str(exc) else 500
+        return JSONResponse(
+            status_code=status_code,
+            content={"detail": f"Agent workflow error: {str(exc)}"},
+        )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        logger.error("Unhandled internal server error: %s", str(exc), exc_info=True)
         return JSONResponse(
             status_code=500,
-            content={"detail": f"Agent workflow error: {str(exc)}"},
+            content={"detail": "An unexpected internal server error occurred."},
         )

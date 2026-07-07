@@ -17,3 +17,20 @@ class StoragePort(ABC):
             The URI or local path where the file is stored.
         """
         pass
+
+    @abstractmethod
+    def get_file_path(self, filename: str) -> str:
+        """
+        Retrieves the local absolute path for a stored file, if it exists.
+
+        Args:
+            filename: The requested filename.
+
+        Returns:
+            The absolute path to the file.
+            
+        Raises:
+            ValueError: If the filename is invalid or poses a path traversal risk.
+            FileNotFoundError: If the file does not exist.
+        """
+        pass

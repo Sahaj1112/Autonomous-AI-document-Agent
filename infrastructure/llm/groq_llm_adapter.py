@@ -27,6 +27,8 @@ class GroqLLMAdapter(LLMPort):
     """
 
     def __init__(self, api_key: str, model: str) -> None:
+        import httpx
+
         if not api_key or not api_key.strip():
             raise ConfigurationError(
                 "GROQ_API_KEY is missing or empty. "
@@ -35,7 +37,10 @@ class GroqLLMAdapter(LLMPort):
         if not model or not model.strip():
             raise ConfigurationError("Groq model name must be a non-empty string.")
 
-        self._client = AsyncGroq(api_key=api_key)
+        # Instantiate a native httpx client to bypass the deprecated 'proxies' argument bug 
+        # in groq 0.11.0's AsyncHttpxClientWrapper when used with httpx 0.28.0+
+        http_client = httpx.AsyncClient()
+        self._client = AsyncGroq(api_key=api_key, http_client=http_client)
         self._model = model
         logger.info("GroqLLMAdapter initialised | model=%s", self._model)
 

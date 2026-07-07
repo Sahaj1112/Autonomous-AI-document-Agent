@@ -37,7 +37,15 @@ class RunAutonomousAgentUseCase:
         Runs the complete autonomous generation workflow:
         Plan -> Sequential content generation -> Self-check reflection -> Optional Improvement -> Word compilation.
         """
-        logger.info("RunAutonomousAgentUseCase: Launching agent workflow for request.")
+        request_text = request_text.strip()
+        if not request_text or len(request_text) < 10:
+            logger.warning("Agent workflow rejected due to invalid request length.", extra={"request_length": len(request_text)})
+            raise DomainError("Request text must be at least 10 characters long.")
+
+        logger.info(
+            "RunAutonomousAgentUseCase: Launching agent workflow.",
+            extra={"request_length": len(request_text), "action": "start_workflow"}
+        )
         state = AgentState(request=request_text)
 
         try:
@@ -104,13 +112,18 @@ class RunAutonomousAgentUseCase:
             state.document_filename = os.path.basename(filepath)
 
             logger.info(
-                "RunAutonomousAgentUseCase: Completed successfully. Output saved to %s",
-                filepath,
+                "RunAutonomousAgentUseCase: Completed successfully.",
+                extra={
+                    "action": "complete_workflow",
+                    "document_type": state.document_type,
+                    "final_quality_score": state.reflection.quality_score if state.reflection else 0,
+                    "filepath": filepath
+                }
             )
             return state
 
         except DomainError:
             raise
         except Exception as e:
-            logger.error("RunAutonomousAgentUseCase failed: %s", str(e), exc_info=True)
+            logger.error("RunAutonomousAgentUseCase failed: %s", str(e), exc_info=True, extra={"action": "workflow_error"})
             raise DomainError(f"Workflow execution failure: {str(e)}") from e
